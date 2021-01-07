@@ -42,8 +42,8 @@ updateChainData = async (chainData, client) => {
 
 getCachedData = async (client) => {
     try {
-        const database = client.db('cache');
-        const collection = database.collection('shortterm');
+        const database = client.db('roya');
+        const collection = database.collection('token');
         cachedData = await collection.find().sort({ _id: -1 }).limit(1).toArray();
         cachedData = cachedData[0];
         return cachedData    
