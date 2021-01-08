@@ -18,7 +18,10 @@ const addresses = {
   royaMining: "0x390b47f521917888b6e487f6b6b078628472f5a4",
   royaOperational: "0x919ba21d00d2d4f68718d90db19b53d625cd50fe",
   royaTeam: "0xcb503bc3538003b3a94c906e580bb3d6cf0b45e3",
-  royaAdvisor: "0xcddc3f73f15e0b1e60025e3d3eb435a72af43991"
+  royaAdvisor: "0xcddc3f73f15e0b1e60025e3d3eb435a72af43991",
+  aprilVesting: "0xfC5892cC812ae0243a184cd40B7C7A9c68DD3023",
+  augustVesting: "0x5146fC420B18a3D9B27D46c267a467B4F82eE155",
+  novemberVesting: "0xaf478a7f1Ff18910a77921098a8205c5eA7C916d"
 }
 
 // Set number formatting default
@@ -46,10 +49,13 @@ const getData = async (web3s) => {
   let royaOperational = await roya.methods.balanceOf(addresses.royaOperational).call() 
   let royaTeam = await roya.methods.balanceOf(addresses.royaTeam).call() 
   let royaAdvisor = await roya.methods.balanceOf(addresses.royaAdvisor).call() 
+  let aprilVesting = await roya.methods.balanceOf(addresses.aprilVesting).call() 
+  let augustVesting = await roya.methods.balanceOf(addresses.augustVesting).call() 
+  let novemberVesting = await roya.methods.balanceOf(addresses.novemberVesting).call() 
 
 
   let royaCirculating = await roya.methods.totalSupply().call()
-  royaCirculating = royaCirculating - royaMining - royaOperational - royaTeam - royaAdvisor
+  royaCirculating = royaCirculating - royaMining - royaOperational - royaTeam - royaAdvisor - novemberVesting - aprilVesting - augustVesting
 
 
 
