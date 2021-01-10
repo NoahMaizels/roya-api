@@ -56,7 +56,7 @@ app.use(morgan('tiny'))
 
 // Routes
 app.use(/^\/$/, (req, res) => {
-  res.send("Welcome to the FinNexus FNX API! Full docs are at: <a target=_blank href=https://www.docs.finnexus.io/apis/token/>https://www.docs.finnexus.io/apis/token/</a> ")
+  res.send("Welcome to the ROYA API!")
 })
 
 app.use('/api/v1', isReady)
@@ -64,7 +64,7 @@ app.use('/api/v1', isReady)
 app.use('/api/v1', apiRoutes)
 
 app.use((req, res) => {
-  res.status(404).json({error: true, message: "Resource not found - see API updates and find available endpoints in docs at: <a target=_blank href=https://www.docs.finnexus.io/apis/token/>https://www.docs.finnexus.io/apis/token/</a>. As the v0.1 Alpha version of the API is still under development, routes may change. Contact @noahniuwa on Telegram with any questions."})
+  res.status(404).json({error: true, message: "Resource not found"})
 })
 
 app.listen(PORT)
