@@ -1,34 +1,22 @@
 const schedule = require("node-schedule")
-// const CoinGecko = require("coingecko-api");
 const numeral = require("numeral")
 const Web3 = require("web3")
 const db = require("./db")
+const addresses = require("./addresses")
+const getPriceData = require("./getPriceData")
 const royaAbi = require("../abi/royaAbi.json")
 
  
 const setupWeb3 = async () => {
-  const eth_web3 = await new Web3(new Web3.providers.WebsocketProvider(process.env.INFURA_URL))
-  return {eth_web3}
-}
-
-//Define all ETH addresses
-
-const addresses = {
-  roya: "0x7eaf9c89037e4814dc0d9952ac7f888c784548db",
-  royaMining: "0x390b47f521917888b6e487f6b6b078628472f5a4",
-  royaOperational: "0x919ba21d00d2d4f68718d90db19b53d625cd50fe",
-  royaTeam: "0xcb503bc3538003b3a94c906e580bb3d6cf0b45e3",
-  royaAdvisor: "0xcddc3f73f15e0b1e60025e3d3eb435a72af43991",
-  aprilVesting: "0xfC5892cC812ae0243a184cd40B7C7A9c68DD3023",
-  augustVesting: "0x5146fC420B18a3D9B27D46c267a467B4F82eE155",
-  novemberVesting: "0xaf478a7f1Ff18910a77921098a8205c5eA7C916d"
+  const web3 = await new Web3(new Web3.providers.WebsocketProvider(process.env.INFURA_URL))
+  return web3
 }
 
 // Set number formatting default
 numeral.defaultFormat("0,0.00");
 
 // For converting to proper number of decimals
-const convertNum = (num, decimal) => {
+const convert = (num, decimal) => {
   return Math.round((num / (10*10**(decimal-3))))/100
 }
 
@@ -36,76 +24,66 @@ const convertNum = (num, decimal) => {
 const chainData = {}
 
 
-const getData = async (web3s) => {
-  const {eth_web3 } = web3s
-  const currentEthBlockNumber = await eth_web3.eth.getBlockNumber()
+const getData = async (web3) => {
 
-  //Instantiate all token smart contract objects
-  let roya = new eth_web3.eth.Contract(royaAbi, addresses.roya)
-   
+  const blockNumber = await web3.eth.getBlockNumber()
 
+  // Instantiate all smart contract object(s)
+  let roya = new web3.eth.Contract(royaAbi, addresses.roya)
 
-  let royaMining = await roya.methods.balanceOf(addresses.royaMining).call() 
-  let royaOperational = await roya.methods.balanceOf(addresses.royaOperational).call() 
-  let royaTeam = await roya.methods.balanceOf(addresses.royaTeam).call() 
-  let royaAdvisor = await roya.methods.balanceOf(addresses.royaAdvisor).call() 
-  let aprilVesting = await roya.methods.balanceOf(addresses.aprilVesting).call() 
-  let augustVesting = await roya.methods.balanceOf(addresses.augustVesting).call() 
-  let novemberVesting = await roya.methods.balanceOf(addresses.novemberVesting).call() 
+  // Make chainData object
 
-
-  let royaCirculating = await roya.methods.totalSupply().call()
-  royaCirculating = royaCirculating - royaMining - royaOperational - royaTeam - royaAdvisor - novemberVesting - aprilVesting - augustVesting
-
-
-
+  let chainData = {
+    royaMining: {},
+    royaOperational: {},
+    royaTeam: {},
+    royaAdvisor: {},
+    aprilVesting: {},
+    julyVesting: {},
+    octoberVesting: {},
+    totalSupply: {},
+    royaCirculating: {},
+  }
   
+  // Get base values 
+  chainData.royaMining.value = await roya.methods.balanceOf(addresses.royaMining).call() 
+  chainData.royaOperational.value  = await roya.methods.balanceOf(addresses.royaOperational).call() 
+  chainData.royaTeam.value  = await roya.methods.balanceOf(addresses.royaTeam).call() 
+  chainData.royaAdvisor.value  = await roya.methods.balanceOf(addresses.royaAdvisor).call() 
+  chainData.aprilVesting.value = await roya.methods.balanceOf(addresses.aprilVesting).call() 
+  chainData.julyVesting.value  = await roya.methods.balanceOf(addresses.julyVesting).call() 
+  chainData.octoberVesting.value  = await roya.methods.balanceOf(addresses.octoberVesting).call() 
 
-  let rawNumbers = {
-    royaCirculating,
-  }
 
-  let itemInfo = {
-    royaCirculating: {  name: "royaCirculating", description: "Circulating supply of ROYA minus operational, team, advisors, and mining tokens."}, 
-  }
-
-  // Set cases for different decimals 
-  Object.keys(rawNumbers).forEach(key => {
-    const name = itemInfo[key].name
-    let decimals  = 18
-    const description = itemInfo[key].description
-    const value = convertNum(rawNumbers[key], decimals)
-    const formattedValue = numeral(value).format()
-    chainData[key] = { 
-      name: name, 
-      description: description, 
-      value: value, 
-      formattedValue: formattedValue, 
-      blockEth: currentEthBlockNumber, 
-      timeStamp: Date()}
+  // Get derived values
+  chainData.totalSupply.value  = await roya.methods.totalSupply().call()
+  chainData.royaCirculating.value  = chainData.totalSupply.value - chainData.royaMining.value  - chainData.royaOperational.value  - chainData.royaTeam.value - chainData.royaAdvisor.value - chainData.octoberVesting.value - chainData.aprilVesting.value - chainData.julyVesting.value
+ 
+  // Set up descriptions
+  chainData.royaCirculating.description = "Circulating supply of ROYA minus operational, team, advisors, and mining tokens."
+  chainData.royaTeam.description = "Royale.finance team tokens."
+  chainData.totalSupply.description = "ROYA token total supply."
+  chainData.royaMining.description = "ROYA tokens reserved for liquidity mining rewards."
+  chainData.royaOperational.description = "ROYA tokens reserved for operations."
+  chainData.royaAdvisor.description = "ROYA tokens reserved for project advisors."
+  chainData.aprilVesting.description = "Token bucket for ROYA tokens which will be vested out from January 2021 to April 2021."
+  chainData.julyVesting.description = "Token bucket for ROYA tokens which will be vested out from April 2021 to July 2021."
+  chainData.octoberVesting.description = "Token bucket for ROYA tokens which will be vested out from July 2021 to October 2021."
+   
+  // Set converted and formatted value, block, and timestamp
+  Object.keys(chainData).forEach(key => {
+    chainData[key].value = convert(chainData[key].value, 18)
+    chainData[key].formattedValue = numeral(chainData[key].value).format()
+    chainData[key].block = blockNumber
+    chainData[key].timestamp = Date.now()
   })
-  chainData.blockEth = currentEthBlockNumber
-
-
-  // Raw & Decimals
-  chainData.timeStamp = Date.now()
-
-  // Add prices
-
-  // Get price data
-
-// const CoinGeckoClient = new CoinGecko();
-
-
-// const getPriceData = async () => {
-//   let priceData = await CoinGeckoClient.simple.price({
-//     ids: ["usd-coin", "wanchain", "finnexus"],
-//     vs_currencies: ["usd"],
-//   });
-//   return priceData
-// }
-// await getPriceData()
-
+  
+  // Set price, block, and timestamp for chainData
+  const priceData = await getPriceData()
+  chainData.roya_price_usd = priceData.data.royale.usd
+  chainData.block = blockNumber
+  chainData.timestamp = Date.now()
+  
   try {
     const client = db.getClient()
     console.log(chainData)
@@ -115,16 +93,14 @@ const getData = async (web3s) => {
     console.log(err)
   }
   return chainData
-
 }
  
-const updateData = async (web3s) => {
-  // update: The settlement robot calls this function daily to update the capital pool and settle the pending refund.
+const updateData = async (web3) => {
   schedule.scheduleJob("0,15,30,45,59 * * * * *", async () => {    
-    let newChainData = getData(web3s)
+    let newChainData = getData(web3)
   })
 }
 
-setupWeb3().then(web3s => updateData(web3s))
+setupWeb3().then(web3 => updateData(web3))
 
 module.exports = chainData

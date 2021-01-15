@@ -8,16 +8,16 @@ const db = require('./utils/db')
 
 
 const apiRoutes = require('./routes/api')
-const isReady = require('./middleware/isReady')
+// const isReady = require('./middleware/isReady')
+const getReady = require('./utils/getReady')
 const removeTrailingSlash = require('./middleware/removeTrailingSlash');
-const { get } = require('./routes/api');
+// const { get } = require('./routes/api');
 
 
 const PORT = process.env.PORT || 3001
 
 // let ready = false
-// getReady().then(result => ready = result)
-
+getReady() 
 const app = express()
 
 // Limit request rate
@@ -59,7 +59,7 @@ app.use(/^\/$/, (req, res) => {
   res.send("Welcome to the ROYA API!")
 })
 
-app.use('/api/v1', isReady)
+// app.use('/api/v1', isReady)
 
 app.use('/api/v1', apiRoutes)
 
