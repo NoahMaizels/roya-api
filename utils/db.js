@@ -32,10 +32,6 @@ updateChainData = async (chainData, client) => {
     }
 }
 
-
-  
-  
-
 getCachedData = async (client) => {
     try {
         const database = client.db('roya');

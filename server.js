@@ -8,15 +8,12 @@ const db = require('./utils/db')
 
 
 const apiRoutes = require('./routes/api')
-// const isReady = require('./middleware/isReady')
 const getReady = require('./utils/getReady')
 const removeTrailingSlash = require('./middleware/removeTrailingSlash');
-// const { get } = require('./routes/api');
 
 
 const PORT = process.env.PORT || 3001
 
-// let ready = false
 getReady() 
 const app = express()
 
