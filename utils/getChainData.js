@@ -31,9 +31,9 @@ const getData = async (web3) => {
   // Instantiate all smart contract object(s)
   let roya = new web3.eth.Contract(royaAbi, addresses.roya)
 
-  // Make chainData object
+  // Make tokenData object
 
-  let chainData = {
+  let tokenData = {
     royaMining: {},
     royaOperational: {},
     royaTeam: {},
@@ -46,43 +46,44 @@ const getData = async (web3) => {
   }
   
   // Get base values 
-  chainData.royaMining.value = await roya.methods.balanceOf(addresses.royaMining).call() 
-  chainData.royaOperational.value  = await roya.methods.balanceOf(addresses.royaOperational).call() 
-  chainData.royaTeam.value  = await roya.methods.balanceOf(addresses.royaTeam).call() 
-  chainData.royaAdvisor.value  = await roya.methods.balanceOf(addresses.royaAdvisor).call() 
-  chainData.aprilVesting.value = await roya.methods.balanceOf(addresses.aprilVesting).call() 
-  chainData.julyVesting.value  = await roya.methods.balanceOf(addresses.julyVesting).call() 
-  chainData.octoberVesting.value  = await roya.methods.balanceOf(addresses.octoberVesting).call() 
+  tokenData.royaMining.value = await roya.methods.balanceOf(addresses.royaMining).call() 
+  tokenData.royaOperational.value  = await roya.methods.balanceOf(addresses.royaOperational).call() 
+  tokenData.royaTeam.value  = await roya.methods.balanceOf(addresses.royaTeam).call() 
+  tokenData.royaAdvisor.value  = await roya.methods.balanceOf(addresses.royaAdvisor).call() 
+  tokenData.aprilVesting.value = await roya.methods.balanceOf(addresses.aprilVesting).call() 
+  tokenData.julyVesting.value  = await roya.methods.balanceOf(addresses.julyVesting).call() 
+  tokenData.octoberVesting.value  = await roya.methods.balanceOf(addresses.octoberVesting).call() 
 
 
   // Get derived values
-  chainData.totalSupply.value  = await roya.methods.totalSupply().call()
-  chainData.royaCirculating.value  = chainData.totalSupply.value - chainData.royaMining.value  - chainData.royaOperational.value  - chainData.royaTeam.value - chainData.royaAdvisor.value - chainData.octoberVesting.value - chainData.aprilVesting.value - chainData.julyVesting.value
+  tokenData.totalSupply.value  = await roya.methods.totalSupply().call()
+  tokenData.royaCirculating.value  = tokenData.totalSupply.value - tokenData.royaMining.value  - tokenData.royaOperational.value  - tokenData.royaTeam.value - tokenData.royaAdvisor.value - tokenData.octoberVesting.value - tokenData.aprilVesting.value - tokenData.julyVesting.value
  
   // Set up descriptions
-  chainData.royaCirculating.description = "Circulating supply of ROYA minus operational, team, advisors, and mining tokens."
-  chainData.royaTeam.description = "Royale.finance team tokens."
-  chainData.totalSupply.description = "ROYA token total supply."
-  chainData.royaMining.description = "ROYA tokens reserved for liquidity mining rewards."
-  chainData.royaOperational.description = "ROYA tokens reserved for operations."
-  chainData.royaAdvisor.description = "ROYA tokens reserved for project advisors."
-  chainData.aprilVesting.description = "Token bucket for ROYA tokens which will be vested out from January 2021 to April 2021."
-  chainData.julyVesting.description = "Token bucket for ROYA tokens which will be vested out from April 2021 to July 2021."
-  chainData.octoberVesting.description = "Token bucket for ROYA tokens which will be vested out from July 2021 to October 2021."
+  tokenData.royaCirculating.description = "Circulating supply of ROYA minus operational, team, advisors, and mining tokens."
+  tokenData.royaTeam.description = "Royale.finance team tokens."
+  tokenData.totalSupply.description = "ROYA token total supply."
+  tokenData.royaMining.description = "ROYA tokens reserved for liquidity mining rewards."
+  tokenData.royaOperational.description = "ROYA tokens reserved for operations."
+  tokenData.royaAdvisor.description = "ROYA tokens reserved for project advisors."
+  tokenData.aprilVesting.description = "Token bucket for ROYA tokens which will be vested out from January 2021 to April 2021."
+  tokenData.julyVesting.description = "Token bucket for ROYA tokens which will be vested out from April 2021 to July 2021."
+  tokenData.octoberVesting.description = "Token bucket for ROYA tokens which will be vested out from July 2021 to October 2021."
    
   // Set converted and formatted value, block, and timestamp
-  Object.keys(chainData).forEach(key => {
-    chainData[key].value = convert(chainData[key].value, 18)
-    chainData[key].formattedValue = numeral(chainData[key].value).format()
-    chainData[key].block = blockNumber
-    chainData[key].timestamp = Date.now()
+  Object.keys(tokenData).forEach(key => {
+    tokenData[key].value = convert(tokenData[key].value, 18)
+    tokenData[key].formattedValue = numeral(tokenData[key].value).format()
+    tokenData[key].block = blockNumber
+    tokenData[key].timestamp = Date.now()
   })
   
-  // Set price, block, and timestamp for chainData
+  // Set price, block, and timestamp for tokenData
   const priceData = await getPriceData()
   chainData.roya_price_usd = priceData.data.royale.usd
   chainData.block = blockNumber
   chainData.timestamp = Date.now()
+  chainData.tokenData = tokenData
   
   try {
     const client = db.getClient()
@@ -97,7 +98,7 @@ const getData = async (web3) => {
  
 const updateData = async (web3) => {
   schedule.scheduleJob("0,15,30,45,59 * * * * *", async () => {    
-    let newChainData = getData(web3)
+    let newtokenData = getData(web3)
   })
 }
 

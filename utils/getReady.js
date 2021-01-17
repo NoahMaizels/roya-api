@@ -1,9 +1,9 @@
-const chainData = require("./getChainData")
+const tokenData = require("./getChainData")
 const sleep = require('ko-sleep');
 
 const getReady = async () => {
   while (true) {
-    if (chainData.block) {
+    if (tokenData.block) {
       break;
     }
     await sleep(100);
