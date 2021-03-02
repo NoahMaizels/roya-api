@@ -4,7 +4,8 @@ const Web3 = require("web3")
 const db = require("./db")
 const addresses = require("./addresses")
 const getPriceData = require("./getPriceData")
-const royaAbi = require("../abi/royaAbi.json")
+const lpoolAbi = require("../abis/lpool.json")
+const { lockedTokens } = require("./addresses")
 
  
 const setupWeb3 = async () => {
@@ -23,53 +24,45 @@ const convert = (num, decimal) => {
 // Set up chain data object
 const chainData = {}
 
-
 const getData = async (web3) => {
 
+  // Get block number
   const blockNumber = await web3.eth.getBlockNumber()
 
-  // Instantiate all smart contract object(s)
-  let roya = new web3.eth.Contract(royaAbi, addresses.roya)
+  // Instantiate smart contract object(s)
+  let lpool = new web3.eth.Contract(lpoolAbi, addresses.lpool)
 
   // Make tokenData object
-
   let tokenData = {
-    royaMining: {},
-    royaOperational: {},
-    royaTeam: {},
-    royaAdvisor: {},
-    aprilVesting: {},
-    julyVesting: {},
-    octoberVesting: {},
     totalSupply: {},
-    royaCirculating: {},
+    circulating: {},
   }
-  
-  // Get base values 
-  tokenData.royaMining.value = await roya.methods.balanceOf(addresses.royaMining).call() 
-  tokenData.royaOperational.value  = await roya.methods.balanceOf(addresses.royaOperational).call() 
-  tokenData.royaTeam.value  = await roya.methods.balanceOf(addresses.royaTeam).call() 
-  tokenData.royaAdvisor.value  = await roya.methods.balanceOf(addresses.royaAdvisor).call() 
-  tokenData.aprilVesting.value = await roya.methods.balanceOf(addresses.aprilVesting).call() 
-  tokenData.julyVesting.value  = await roya.methods.balanceOf(addresses.julyVesting).call() 
-  tokenData.octoberVesting.value  = await roya.methods.balanceOf(addresses.octoberVesting).call() 
 
+  // EXAMPLE CODE: REPLACE OR REMOVE FOR PRODUCTION
+  // Add other data objects such as TVL here if needed 
+  // let tvlData = {
+  //   lpool: {},
+  //   otherToken: {},
+  // }
+
+  // Calculate total locked LPOOL 
+  let totalLocked = 0
+  Object.keys(lockedTokens).forEach(async key => {
+    const locked = await lpool.methods.balanceOf(lockedTokens[key]).call() 
+    totalLocked += Number(locked)
+  })
+ 
+  // Get total supply
+  tokenData.totalSupply.value  = await lpool.methods.totalSupply().call()
 
   // Get derived values
-  tokenData.totalSupply.value  = await roya.methods.totalSupply().call()
-  tokenData.royaCirculating.value  = tokenData.totalSupply.value - tokenData.royaMining.value  - tokenData.royaOperational.value  - tokenData.royaTeam.value - tokenData.royaAdvisor.value - tokenData.octoberVesting.value - tokenData.aprilVesting.value - tokenData.julyVesting.value
- 
+  tokenData.circulating.value = tokenData.totalSupply.value - totalLocked
+
   // Set up descriptions
-  tokenData.royaCirculating.description = "Circulating supply of ROYA minus operational, team, advisors, and mining tokens."
-  tokenData.royaTeam.description = "Royale.finance team tokens."
-  tokenData.totalSupply.description = "ROYA token total supply."
-  tokenData.royaMining.description = "ROYA tokens reserved for liquidity mining rewards."
-  tokenData.royaOperational.description = "ROYA tokens reserved for operations."
-  tokenData.royaAdvisor.description = "ROYA tokens reserved for project advisors."
-  tokenData.aprilVesting.description = "Token bucket for ROYA tokens which will be vested out from January 2021 to April 2021."
-  tokenData.julyVesting.description = "Token bucket for ROYA tokens which will be vested out from April 2021 to July 2021."
-  tokenData.octoberVesting.description = "Token bucket for ROYA tokens which will be vested out from July 2021 to October 2021."
-   
+  tokenData.circulating.description = "LPOOL total supply minus all locked LPOOL"
+  tokenData.totalSupply.description = "LPOOL total supply."
+ 
+  
   // Set converted and formatted value, block, and timestamp
   Object.keys(tokenData).forEach(key => {
     tokenData[key].value = convert(tokenData[key].value, 18)
@@ -78,12 +71,14 @@ const getData = async (web3) => {
     tokenData[key].timestamp = Date.now()
   })
   
-  // Set price, block, and timestamp for tokenData
+  // Set price, block, and timestamp for tokenData, add tokenData object and other data objects
   const priceData = await getPriceData()
-  chainData.roya_price_usd = priceData.data.royale.usd
+  chainData.lpool_price_usd = priceData.data.launchpool.usd
   chainData.block = blockNumber
   chainData.timestamp = Date.now()
   chainData.tokenData = tokenData
+  // EXAMPLE CODE: REPLACE OR REMOVE FOR PRODUCTION
+  //chaindata.tvlData = tvlData 
   
   try {
     const client = db.getClient()
@@ -97,8 +92,8 @@ const getData = async (web3) => {
 }
  
 const updateData = async (web3) => {
-  schedule.scheduleJob("0,15,30,45,59 * * * * *", async () => {    
-    let newtokenData = getData(web3)
+  schedule.scheduleJob("0 * * * * *", async () => {    
+    getData(web3)
   })
 }
 
